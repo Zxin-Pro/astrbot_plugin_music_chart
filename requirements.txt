@@ -1,0 +1,4 @@
+aiohttp>=3.8
+Pillow>=9.0
+# 可选依赖：备用数据源（use_json_source=false 时需要）
+# pip install billboard-charts

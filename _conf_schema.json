@@ -1,0 +1,37 @@
+{
+  "push_time": {
+    "type": "string",
+    "default": "10:00",
+    "description": "每日定时推送时间（HH:MM，24小时制）",
+    "hint": "Billboard 榜单通常每周二更新，建议设置在周二上午；到点后仅推送一次"
+  },
+  "push_target": {
+    "type": "string",
+    "default": "",
+    "description": "定时推送目标，多个用英文逗号分隔，留空不推送",
+    "hint": "推荐填完整 UMO，如 aiocqhttp:GroupMessage:123456 或 aiocqhttp:FriendMessage:10001；填纯数字 ID 时会自动尝试所有平台实例的群聊会话"
+  },
+  "chart_name": {
+    "type": "string",
+    "default": "hot-100",
+    "description": "定时推送的默认榜单 slug",
+    "hint": "如 hot-100 / billboard-200 / pop-songs；注意 JSON 数据源仅支持 hot-100，其他榜单需安装 billboard-charts 库"
+  },
+  "max_items": {
+    "type": "int",
+    "default": 10,
+    "description": "显示榜单前 N 名",
+    "hint": "1-100"
+  },
+  "enable_image_render": {
+    "type": "bool",
+    "default": true,
+    "description": "启用 Pillow 图片渲染（关闭或渲染失败时降级为文本消息）"
+  },
+  "use_json_source": {
+    "type": "bool",
+    "default": true,
+    "description": "优先使用 GitHub JSON 数据源（稳定、免解析 HTML，仅支持 hot-100）",
+    "hint": "查询其他榜单或关闭此项时自动改用 billboard-charts 库（需 pip install billboard-charts）"
+  }
+}
