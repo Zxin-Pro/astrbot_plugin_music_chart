@@ -14,15 +14,43 @@ import base64
 import datetime
 import re
 
-from astrbot.api import AstrMessageEvent, Star, logger
-from astrbot.api.star import Context, register
+# 兼容旧版 AstrBot：astrbot.api 不导出 AstrMessageEvent/Star，逐符号降级链
+try:
+    from astrbot.api import logger
+except ImportError:
+    from astrbot.core import logger
+
+try:
+    from astrbot.api import AstrMessageEvent
+except ImportError:
+    try:
+        from astrbot.api.event import AstrMessageEvent
+    except ImportError:
+        from astrbot.core.platform.astr_message_event import AstrMessageEvent
+
+try:
+    from astrbot.api import Star
+except ImportError:
+    try:
+        from astrbot.api.star import Star
+    except ImportError:
+        from astrbot.core.star import Star
+
+try:
+    from astrbot.api import Context, register
+except ImportError:
+    from astrbot.api.star import Context, register
+
 from astrbot.api.message_components import Image, Plain
 from astrbot.core.message.message_event_result import MessageChain
 
 try:
     from astrbot.api import filter
 except ImportError:  # 兼容不同版本 AstrBot 的导出位置
-    import astrbot.api.star.filter as filter
+    try:
+        import astrbot.api.star.filter as filter
+    except ImportError:
+        from astrbot.core.star import filter
 
 from .fetcher import (MusicChartFetcher, ChartFetchError, HAS_BILLBOARD_LIB,
                       SLUG_ALIASES, NETEASE_CHARTS)
