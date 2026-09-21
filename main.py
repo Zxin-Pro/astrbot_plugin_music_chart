@@ -44,13 +44,13 @@ except ImportError:
 from astrbot.api.message_components import Image, Plain
 from astrbot.core.message.message_event_result import MessageChain
 
+# filter 必须来自 astrbot.api.event.filter（含 register_command as command）。
+# 注意 astrbot.api.star.filter / astrbot.core.star.filter 是只有 HandlerFilter
+# 基类的包，其 command 属性是子模块，调用会报 'module' object is not callable。
 try:
+    from astrbot.api.event import filter
+except ImportError:
     from astrbot.api import filter
-except ImportError:  # 兼容不同版本 AstrBot 的导出位置
-    try:
-        import astrbot.api.star.filter as filter
-    except ImportError:
-        from astrbot.core.star import filter
 
 from .fetcher import (MusicChartFetcher, ChartFetchError, HAS_BILLBOARD_LIB,
                       SLUG_ALIASES, NETEASE_CHARTS)
