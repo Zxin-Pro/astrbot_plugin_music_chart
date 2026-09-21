@@ -44,6 +44,26 @@ REQUEST_TIMEOUT = 20     # 单请求超时（秒）
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+# 华语榜系列别名（均走 billboard-charts 库方案）
+SLUG_ALIASES = {
+    "huayu": "taiwan-songs",       # 华语榜 = 台湾歌曲榜（国语）
+    "mandarin": "taiwan-songs",
+    "guoyu": "taiwan-songs",
+    "tw": "taiwan-songs",
+    "cantonese": "hong-kong-songs",  # 粤语榜 = 香港歌曲榜
+    "yueyu": "hong-kong-songs",
+    "hk": "hong-kong-songs",
+}
+
+# 内地华语系列：网易云音乐官方榜单（Billboard 无内地榜，V Chart 已停更）
+# slug -> (网易云歌单 id, 展示名)
+NETEASE_CHARTS = {
+    "mainland": ("3778678", "华语内地热歌榜"),   # /music mainland 内地热歌
+    "nethot": ("3778678", "华语内地热歌榜"),
+    "netrise": ("19723756", "华语飙升榜"),       # 飙升榜
+    "netnew": ("3779629", "华语新歌榜"),         # 新歌榜
+}
+
 
 class ChartFetchError(Exception):
     """榜单获取失败（网络 / 解析 / 不支持的数据源组合 / 空数据）"""
@@ -221,6 +241,56 @@ class MusicChartFetcher:
             "items": self._normalize_items(rows, "library"),
         }
 
+    # ---------- 内地华语：网易云音乐 ----------
+
+    async def fetch_from_netease(self, chart_slug: str) -> dict:
+        """网易云音乐官方榜单（歌单接口），返回统一结构。
+
+        该源无排名变化数据：last_week=None 且 no_trend=True，
+        渲染层据此显示「本期在榜」而非「新上榜」。
+        """
+        pid, display = NETEASE_CHARTS[chart_slug]
+        session = await self._get_session()
+        url = f"https://music.163.com/api/playlist/detail?id={pid}"
+        try:
+            async with session.get(
+                url, headers={"Referer": "https://music.163.com",
+                              "User-Agent": "Mozilla/5.0"}) as resp:
+                if resp.status != 200:
+                    raise ChartFetchError(f"网易云接口 HTTP {resp.status}")
+                payload = await resp.json(content_type=None)
+        except asyncio.TimeoutError:
+            raise ChartFetchError(f"网易云接口请求超时（{REQUEST_TIMEOUT}s）")
+        except aiohttp.ClientError as e:
+            raise ChartFetchError(f"网易云接口网络错误：{type(e).__name__}: {e}")
+        try:
+            tracks = payload["result"]["tracks"]
+            if not tracks:
+                raise ValueError("tracks 为空")
+            items = []
+            for i, t in enumerate(tracks):
+                song = str(t.get("name") or "").strip()
+                if not song:
+                    continue
+                artists = "/".join(
+                    str(a.get("name") or "").strip()
+                    for a in (t.get("artists") or []) if a.get("name")
+                ) or "未知歌手"
+                items.append({
+                    "rank": i + 1, "song": song, "artist": artists,
+                    "last_week": None, "peak_position": i + 1,
+                    "weeks_on_chart": 0, "no_trend": True,
+                })
+        except (KeyError, TypeError, ValueError) as e:
+            raise ChartFetchError(f"网易云数据解析失败：{e}")
+        if not items:
+            raise ChartFetchError("网易云榜单数据为空")
+        return {
+            "date": datetime.date.today().strftime("%Y-%m-%d"),
+            "source": "netease",
+            "items": items,
+        }
+
     # ---------- 统一入口（带 TTL 缓存） ----------
 
     async def fetch(
@@ -236,8 +306,13 @@ class MusicChartFetcher:
             )
         date = normalize_date(date)
 
-        # 数据源调度：JSON 仅支持 hot-100；其他 slug 或关配置走库方案
-        if use_json and chart_slug == "hot-100":
+        # 别名归一化
+        chart_slug = SLUG_ALIASES.get(chart_slug, chart_slug)
+
+        # 数据源调度：内地华语走网易云；JSON 仅 hot-100；其他走库方案
+        if chart_slug in NETEASE_CHARTS:
+            source = "netease"
+        elif use_json and chart_slug == "hot-100":
             source = "json"
         elif use_json and date:
             raise ChartFetchError(
@@ -256,6 +331,8 @@ class MusicChartFetcher:
 
             if source == "json":
                 data = await self.fetch_from_json(chart_slug, date)
+            elif source == "netease":
+                data = await self.fetch_from_netease(chart_slug)
             else:
                 data = await self.fetch_from_library(chart_slug, date)
             self._cache[key] = {"ts": time.time(), "data": data}

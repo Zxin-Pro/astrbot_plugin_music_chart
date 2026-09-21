@@ -25,3 +25,15 @@ Billboard 音乐榜单查询与每日定时推送（Hot 100 等）。
 ## 定时推送
 
 管理面板配置 push_time（默认 10:00）与 push_target（UMO 或群号，逗号分隔），每日到点自动推送。
+
+## 华语中文歌系列
+
+| 指令 | 榜单 | 数据源 |
+|---|---|---|
+| /music huayu | Billboard 台湾歌曲榜（国语） | billboard-charts |
+| /music cantonese | Billboard 香港歌曲榜（粤语） | billboard-charts |
+| /music mainland | 华语内地热歌榜 | 网易云音乐 |
+| /music netrise | 华语飙升榜 | 网易云音乐 |
+| /music netnew | 华语新歌榜 | 网易云音乐 |
+
+> Billboard 无中国内地榜（China V Chart 已停更），内地系列走网易云音乐官方榜单接口。

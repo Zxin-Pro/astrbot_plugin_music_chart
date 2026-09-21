@@ -67,7 +67,9 @@ def _chart_cards(items: list, max_items: int = 10) -> list:
         artist = html.escape(str(it.get("artist", "")))
         peak = it.get("peak_position", rank)
         weeks = it.get("weeks_on_chart", 0)
-        if lw is None:
+        if it.get("no_trend"):
+            trend = "🎵 内地榜 · 本期在榜"
+        elif lw is None:
             trend = "🆕 新上榜"
         elif lw == rank:
             trend = f"➖ 上周 #{lw} 持平"
@@ -317,6 +319,19 @@ def chart_display_name(slug: str) -> str:
         "dance-electronic-songs": "Dance/Electronic Songs",
         "latin-songs": "Latin Songs",
         "world-digital-song-sales": "World Digital Song Sales",
+        "taiwan-songs": "Billboard 台湾歌曲榜",
+        "hong-kong-songs": "Billboard 香港歌曲榜",
+        "huayu": "Billboard 台湾歌曲榜",
+        "mandarin": "Billboard 台湾歌曲榜",
+        "guoyu": "Billboard 台湾歌曲榜",
+        "tw": "Billboard 台湾歌曲榜",
+        "cantonese": "Billboard 香港歌曲榜",
+        "yueyu": "Billboard 香港歌曲榜",
+        "hk": "Billboard 香港歌曲榜",
+        "mainland": "华语内地热歌榜",
+        "nethot": "华语内地热歌榜",
+        "netrise": "华语飙升榜",
+        "netnew": "华语新歌榜",
     }
     return names.get(slug, f"Billboard {slug.replace('-', ' ').title()}")
 
@@ -327,7 +342,9 @@ def fallback_text(title: str, date, items: list, max_items: int = 10) -> str:
     lines = [f"📊 {title} Top {n}（{date or '未注明周次'}）", ""]
     for it in items[:n]:
         rank, lw = it.get("rank"), it.get("last_week")
-        if lw is None:
+        if it.get("no_trend"):
+            trend = "🎵 内地榜 · 本期在榜"
+        elif lw is None:
             trend = "🆕 新上榜"
         elif lw == rank:
             trend = "➖ 与上周持平"

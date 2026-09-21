@@ -24,7 +24,8 @@ try:
 except ImportError:  # 兼容不同版本 AstrBot 的导出位置
     import astrbot.api.star.filter as filter
 
-from .fetcher import MusicChartFetcher, ChartFetchError, HAS_BILLBOARD_LIB
+from .fetcher import (MusicChartFetcher, ChartFetchError, HAS_BILLBOARD_LIB,
+                      SLUG_ALIASES, NETEASE_CHARTS)
 from .renderer import (render_chart, fallback_text, chart_display_name,
                        t2i_render_chart, _load_font)
 
@@ -35,15 +36,24 @@ HELP_TEXT = """🎵 音乐榜单插件（astrbot_plugin_music_chart）
 
 /music                  当前 Billboard Hot 100 Top {max_items}
 /music <榜单slug>       指定榜单，如 /music billboard-200
+
+—— 华语中文歌系列 ——
+/music huayu            Billboard 台湾歌曲榜（国语）
+/music cantonese        Billboard 香港歌曲榜（粤语）
+/music mainland         华语内地热歌榜（网易云音乐）
+/music netrise          华语飙升榜（网易云音乐）
+/music netnew           华语新歌榜（网易云音乐）
+
+其他：
 /music date <日期>      指定日期榜单，如 /music date 2026-09-12
 /music refresh          强制刷新（绕过缓存）
 /music help             显示本帮助
 /music debug            诊断检查
 
 说明：
-· 数据源默认走 GitHub JSON（仅 hot-100），其他榜单需安装 billboard-charts 库
-· Billboard 榜单每周更新（通常周二）
-· 定时推送请在管理面板配置 push_time / push_target
+· 华语台湾/香港榜需安装 billboard-charts 库；内地榜走网易云音乐接口
+· Billboard 榜单每周更新（通常周二），内地榜每日更新
+· 定时推送请在管理面板配置 push_time / push_target（chart_name 可填 huayu / mainland 等）
 """.rstrip()
 
 
@@ -82,6 +92,7 @@ class MusicChartPlugin(Star):
     @property
     def _chart_name(self) -> str:
         slug = str(self._cfg("chart_name", "hot-100") or "hot-100").strip().lower()
+        slug = SLUG_ALIASES.get(slug, slug)
         return slug if slug else "hot-100"
 
     # ---------- 生命周期 ----------
@@ -151,6 +162,7 @@ class MusicChartPlugin(Star):
     async def _query_and_reply(self, event: AstrMessageEvent, slug: str,
                                date: str = None, force: bool = False):
         """取数 → 渲染/降级文本 → 回复（async generator，yield 消息结果）"""
+        slug = SLUG_ALIASES.get(slug, slug)   # 别名归一化，保证展示名正确
         use_json = bool(self._cfg("use_json_source", True))
         enable_img = bool(self._cfg("enable_image_render", True))
         max_items = self._max_items
