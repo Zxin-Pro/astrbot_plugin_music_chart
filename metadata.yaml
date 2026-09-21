@@ -1,6 +1,6 @@
 name: astrbot_plugin_music_chart
 desc: 获取 Billboard Hot 100 等音乐榜单，支持手动查询、指定日期查询、Pillow 深色榜单图渲染与每日定时推送
 help: 指令 /music [help|refresh|debug|date YYYY-MM-DD|榜单slug]，详见 /music help
-version: v1.0.2
+version: v1.0.6
 author: Zxin-Pro
 repo: https://github.com/Zxin-Pro/astrbot_plugin_music_chart

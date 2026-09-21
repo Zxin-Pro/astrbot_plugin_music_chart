@@ -90,7 +90,7 @@ HELP_TEXT = """🎵 音乐榜单插件（astrbot_plugin_music_chart）
     "astrbot_plugin_music_chart",
     "Zxin-Pro",
     "Billboard 音乐榜单查询与每日定时推送（Hot 100 等）",
-    "1.0.0",
+    "1.0.6",
 )
 class MusicChartPlugin(Star):
     def __init__(self, context: Context, config: dict = None):
@@ -128,7 +128,7 @@ class MusicChartPlugin(Star):
 
     async def initialize(self):
         self._push_task = asyncio.create_task(self._push_loop())
-        logger.info("[music_chart] loaded v1.0.0")
+        logger.info("[music_chart] loaded v1.0.6")
 
     async def terminate(self):
         if self._push_task:
