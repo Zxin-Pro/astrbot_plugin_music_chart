@@ -332,6 +332,15 @@ def chart_display_name(slug: str) -> str:
         "nethot": "华语内地热歌榜",
         "netrise": "华语飙升榜",
         "netnew": "华语新歌榜",
+        "内地": "华语内地热歌榜",
+        "热歌": "华语内地热歌榜",
+        "飙升": "华语飙升榜",
+        "新歌": "华语新歌榜",
+        "华语": "Billboard 台湾歌曲榜",
+        "国语": "Billboard 台湾歌曲榜",
+        "台湾": "Billboard 台湾歌曲榜",
+        "粤语": "Billboard 香港歌曲榜",
+        "香港": "Billboard 香港歌曲榜",
     }
     return names.get(slug, f"Billboard {slug.replace('-', ' ').title()}")
 

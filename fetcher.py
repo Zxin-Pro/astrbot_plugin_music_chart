@@ -44,15 +44,20 @@ REQUEST_TIMEOUT = 20     # 单请求超时（秒）
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-# 华语榜系列别名（均走 billboard-charts 库方案）
+# 华语榜系列别名（含中文别名；均走 billboard-charts 库方案）
 SLUG_ALIASES = {
     "huayu": "taiwan-songs",       # 华语榜 = 台湾歌曲榜（国语）
     "mandarin": "taiwan-songs",
     "guoyu": "taiwan-songs",
     "tw": "taiwan-songs",
+    "华语": "taiwan-songs",
+    "国语": "taiwan-songs",
+    "台湾": "taiwan-songs",
     "cantonese": "hong-kong-songs",  # 粤语榜 = 香港歌曲榜
     "yueyu": "hong-kong-songs",
     "hk": "hong-kong-songs",
+    "粤语": "hong-kong-songs",
+    "香港": "hong-kong-songs",
 }
 
 # 内地华语系列：网易云音乐官方榜单（Billboard 无内地榜，V Chart 已停更）
@@ -62,6 +67,10 @@ NETEASE_CHARTS = {
     "nethot": ("3778678", "华语内地热歌榜"),
     "netrise": ("19723756", "华语飙升榜"),       # 飙升榜
     "netnew": ("3779629", "华语新歌榜"),         # 新歌榜
+    "内地": ("3778678", "华语内地热歌榜"),
+    "热歌": ("3778678", "华语内地热歌榜"),
+    "飙升": ("19723756", "华语飙升榜"),
+    "新歌": ("3779629", "华语新歌榜"),
 }
 
 
@@ -300,14 +309,13 @@ class MusicChartFetcher:
         use_json: bool = True,
         force: bool = False,
     ) -> dict:
-        if not SLUG_RE.match(chart_slug or ""):
+        # 别名归一化（含中文别名，必须在 slug 白名单校验之前）
+        chart_slug = SLUG_ALIASES.get(chart_slug, chart_slug)
+        if chart_slug not in NETEASE_CHARTS and not SLUG_RE.match(chart_slug or ""):
             raise ChartFetchError(
-                f"榜单 slug 不合法：{chart_slug!r}（示例：hot-100 / billboard-200 / pop-songs）"
+                f"榜单 slug 不合法：{chart_slug!r}（示例：hot-100 / huayu / mainland）"
             )
         date = normalize_date(date)
-
-        # 别名归一化
-        chart_slug = SLUG_ALIASES.get(chart_slug, chart_slug)
 
         # 数据源调度：内地华语走网易云；JSON 仅 hot-100；其他走库方案
         if chart_slug in NETEASE_CHARTS:

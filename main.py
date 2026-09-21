@@ -34,26 +34,27 @@ PUSH_POLL_INTERVAL = 30  # 定时轮询间隔（秒）
 
 HELP_TEXT = """🎵 音乐榜单插件（astrbot_plugin_music_chart）
 
-/music                  当前 Billboard Hot 100 Top {max_items}
-/music <榜单slug>       指定榜单，如 /music billboard-200
+/music 或 /音乐            当前 Billboard Hot 100 Top {max_items}
+/music <榜单>              指定榜单，如 /音乐 billboard-200
 
 —— 华语中文歌系列 ——
-/music huayu            Billboard 台湾歌曲榜（国语）
-/music cantonese        Billboard 香港歌曲榜（粤语）
-/music mainland         华语内地热歌榜（网易云音乐）
-/music netrise          华语飙升榜（网易云音乐）
-/music netnew           华语新歌榜（网易云音乐）
+/音乐 华语                 Billboard 台湾歌曲榜（国语）
+/音乐 粤语                 Billboard 香港歌曲榜（粤语）
+/音乐 内地                 华语内地热歌榜（网易云音乐）
+/音乐 飙升                 华语飙升榜（网易云音乐）
+/音乐 新歌                 华语新歌榜（网易云音乐）
+（英文别名：huayu / cantonese / mainland / netrise / netnew）
 
 其他：
-/music date <日期>      指定日期榜单，如 /music date 2026-09-12
-/music refresh          强制刷新（绕过缓存）
-/music help             显示本帮助
-/music debug            诊断检查
+/music 日期 2026-09-12    指定日期榜单（仅 hot-100）
+/music 刷新               强制刷新（绕过缓存）
+/music 帮助               显示本帮助
+/music 诊断               诊断检查
 
 说明：
 · 华语台湾/香港榜需安装 billboard-charts 库；内地榜走网易云音乐接口
 · Billboard 榜单每周更新（通常周二），内地榜每日更新
-· 定时推送请在管理面板配置 push_time / push_target（chart_name 可填 huayu / mainland 等）
+· 定时推送请在管理面板配置 push_time / push_target（chart_name 可填 华语 / 内地 等）
 """.rstrip()
 
 
@@ -114,18 +115,19 @@ class MusicChartPlugin(Star):
 
     # ---------- 指令入口 ----------
 
-    @filter.command("music")
+    @filter.command("music", alias={"音乐", "音乐榜"})
     async def cmd_music(self, event: AstrMessageEvent):
-        """音乐榜单查询主指令"""
+        """音乐榜单查询主指令（/music /音乐 /音乐榜）"""
         args = (event.message_str or "").strip().split()
-        if args and args[0].lower() in ("music", "/music"):
+        if args and args[0].lower() in ("music", "/music", "音乐", "/音乐",
+                                        "音乐榜", "/音乐榜"):
             args = args[1:]
 
-        # 子命令分发
-        if args and args[0].lower() == "help":
+        # 子命令分发（中英双语）
+        if args and args[0].lower() in ("help", "帮助"):
             yield event.plain_result(HELP_TEXT.format(max_items=self._max_items))
             return
-        if args and args[0].lower() == "debug":
+        if args and args[0].lower() in ("debug", "诊断"):
             async for r in self._debug_report():
                 yield r
             return
@@ -134,9 +136,9 @@ class MusicChartPlugin(Star):
                                                  force=True):
                 yield r
             return
-        if args and args[0].lower() == "date":
+        if args and args[0].lower() in ("date", "日期"):
             if len(args) < 2:
-                yield event.plain_result("用法：/music date 2026-09-12（仅 hot-100 支持）")
+                yield event.plain_result("用法：/音乐 日期 2026-09-12（仅 hot-100 支持）")
                 return
             async for r in self._query_and_reply(event, self._chart_name,
                                                  date=args[1]):
