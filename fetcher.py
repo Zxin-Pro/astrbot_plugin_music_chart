@@ -1,4 +1,4 @@
-"""数据获取层：Billboard 榜单双数据源（GitHub JSON 主方案 / billboard-charts 库备选方案）
+"""数据获取层：榜单三数据源（JSON 主方案 / billboard-charts 库 / 网易云音乐内地榜）
 
 统一输出结构:
     {
@@ -46,27 +46,18 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # 华语榜系列别名（含中文别名；均走 billboard-charts 库方案）
 SLUG_ALIASES = {
-    "huayu": "taiwan-songs",       # 华语榜 = 台湾歌曲榜（国语）
-    "mandarin": "taiwan-songs",
-    "guoyu": "taiwan-songs",
-    "tw": "taiwan-songs",
-    "华语": "taiwan-songs",
+    "公告牌": "hot-100",
+    "美国": "hot-100",
+    "华语": "taiwan-songs",      # 华语榜 = 台湾歌曲榜（国语）
     "国语": "taiwan-songs",
     "台湾": "taiwan-songs",
-    "cantonese": "hong-kong-songs",  # 粤语榜 = 香港歌曲榜
-    "yueyu": "hong-kong-songs",
-    "hk": "hong-kong-songs",
-    "粤语": "hong-kong-songs",
+    "粤语": "hong-kong-songs",   # 粤语榜 = 香港歌曲榜
     "香港": "hong-kong-songs",
 }
 
 # 内地华语系列：网易云音乐官方榜单（Billboard 无内地榜，V Chart 已停更）
 # slug -> (网易云歌单 id, 展示名)
 NETEASE_CHARTS = {
-    "mainland": ("3778678", "华语内地热歌榜"),   # /music mainland 内地热歌
-    "nethot": ("3778678", "华语内地热歌榜"),
-    "netrise": ("19723756", "华语飙升榜"),       # 飙升榜
-    "netnew": ("3779629", "华语新歌榜"),         # 新歌榜
     "内地": ("3778678", "华语内地热歌榜"),
     "热歌": ("3778678", "华语内地热歌榜"),
     "飙升": ("19723756", "华语飙升榜"),
@@ -178,7 +169,7 @@ class MusicChartFetcher:
         """从 mhollingshead/billboard-hot-100 拉取 JSON（仅支持 hot-100）"""
         if chart_slug != "hot-100":
             raise ChartFetchError(
-                f"JSON 数据源仅支持 hot-100 榜单，{chart_slug} 请使用 billboard-charts 库"
+                f"该数据源仅支持公告牌百首单曲榜，{chart_slug} 请改用其他榜单名或安装 billboard-charts 库"
             )
         date = normalize_date(date)
         url = f"{JSON_BASE}/recent.json" if not date else f"{JSON_BASE}/date/{date}.json"
@@ -188,15 +179,15 @@ class MusicChartFetcher:
                 if resp.status != 200:
                     if date and resp.status == 404:
                         raise ChartFetchError(
-                            f"JSON 数据源中不存在 {date} 的榜单（该仓库覆盖 1958 年至今的每周榜单，"
+                            f"数据源中不存在 {date} 的榜单（覆盖 1958 年至今的每周榜单，"
                             f"请确认日期是有效周次）"
                         )
-                    raise ChartFetchError(f"JSON 数据源 HTTP {resp.status}")
+                    raise ChartFetchError(f"数据源 HTTP {resp.status}")
                 raw = await resp.read()
         except asyncio.TimeoutError:
-            raise ChartFetchError(f"JSON 数据源请求超时（{REQUEST_TIMEOUT}s）")
+            raise ChartFetchError(f"数据源请求超时（{REQUEST_TIMEOUT} 秒）")
         except aiohttp.ClientError as e:
-            raise ChartFetchError(f"JSON 数据源网络错误：{type(e).__name__}: {e}")
+            raise ChartFetchError(f"数据源网络错误：{type(e).__name__}: {e}")
         try:
             payload = json.loads(raw.decode("utf-8"))
             chart_date = str(payload.get("date") or date or "").strip()
@@ -204,7 +195,7 @@ class MusicChartFetcher:
             if not isinstance(data, list) or not data:
                 raise ValueError("data 字段缺失或为空")
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError, AttributeError) as e:
-            raise ChartFetchError(f"JSON 解析失败：{e}")
+            raise ChartFetchError(f"数据解析失败：{e}")
         return {
             "date": chart_date or None,
             "source": "json",
@@ -221,7 +212,7 @@ class MusicChartFetcher:
             )
         if date:
             raise ChartFetchError(
-                "billboard-charts 库方案不支持指定日期查询（指定日期请使用 JSON 数据源，仅 hot-100）"
+                "指定日期查询仅支持公告牌百首单曲榜"
             )
         chart_date: Optional[str] = None
         try:
@@ -313,7 +304,7 @@ class MusicChartFetcher:
         chart_slug = SLUG_ALIASES.get(chart_slug, chart_slug)
         if chart_slug not in NETEASE_CHARTS and not SLUG_RE.match(chart_slug or ""):
             raise ChartFetchError(
-                f"榜单 slug 不合法：{chart_slug!r}（示例：hot-100 / huayu / mainland）"
+                f"榜单名不合法：{chart_slug!r}（可用：公告牌 / 华语 / 粤语 / 内地 / 飙升 / 新歌）"
             )
         date = normalize_date(date)
 
@@ -324,7 +315,7 @@ class MusicChartFetcher:
             source = "json"
         elif use_json and date:
             raise ChartFetchError(
-                "JSON 数据源仅支持 hot-100 的日期查询；其他榜单不支持指定日期"
+                "仅公告牌百首单曲榜支持指定日期查询，其他榜单不支持"
             )
         else:
             source = "library"

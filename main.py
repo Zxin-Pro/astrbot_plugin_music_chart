@@ -1,12 +1,14 @@
 """astrbot_plugin_music_chart - Billboard 音乐榜单查询与每日定时推送
 
-指令（统一入口 /music）:
-    /music                  当前默认榜单 Top N（JSON 主方案）
-    /music hot-100          指定榜单 slug
-    /music date 2026-09-12  查询指定日期榜单（仅 JSON 主方案 / hot-100）
-    /music refresh          强制刷新（绕过缓存）
-    /music help             帮助
-    /music debug            诊断（连通性 / 解析 / 缓存 / 渲染 / 调度）
+指令（统一入口 /音乐，别名 /音乐榜）:
+    /音乐                   当前默认榜单 Top N
+    /音乐 公告牌             公告牌百首单曲榜
+    /音乐 华语 / 粤语        台湾 / 香港歌曲榜
+    /音乐 内地 / 飙升 / 新歌  内地热歌 / 飙升 / 新歌榜（网易云音乐）
+    /音乐 日期 2026-09-12    查询指定日期榜单（仅公告牌百首单曲榜）
+    /音乐 刷新               强制刷新（绕过缓存）
+    /音乐 帮助               帮助
+    /音乐 诊断               诊断（连通性 / 解析 / 缓存 / 渲染 / 调度）
 """
 
 import asyncio
@@ -60,28 +62,26 @@ from .renderer import (render_chart, fallback_text, chart_display_name,
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PUSH_POLL_INTERVAL = 30  # 定时轮询间隔（秒）
 
-HELP_TEXT = """🎵 音乐榜单插件（astrbot_plugin_music_chart）
+HELP_TEXT = """🎵 音乐榜单插件
 
-/music 或 /音乐            当前 Billboard Hot 100 Top {max_items}
-/music <榜单>              指定榜单，如 /音乐 billboard-200
+/音乐                      当前默认榜单 Top {max_items}
+/音乐 <榜单名>             指定榜单查询
 
-—— 华语中文歌系列 ——
-/音乐 华语                 Billboard 台湾歌曲榜（国语）
-/音乐 粤语                 Billboard 香港歌曲榜（粤语）
-/音乐 内地                 华语内地热歌榜（网易云音乐）
+—— 榜单列表 ——
+/音乐 公告牌               公告牌百首单曲榜（每周二更新）
+/音乐 华语                 公告牌台湾歌曲榜（国语）
+/音乐 粤语                 公告牌香港歌曲榜（粤语）
+/音乐 内地                 华语内地热歌榜（网易云音乐，每日更新）
 /音乐 飙升                 华语飙升榜（网易云音乐）
 /音乐 新歌                 华语新歌榜（网易云音乐）
-（英文别名：huayu / cantonese / mainland / netrise / netnew）
 
-其他：
-/music 日期 2026-09-12    指定日期榜单（仅 hot-100）
-/music 刷新               强制刷新（绕过缓存）
-/music 帮助               显示本帮助
-/music 诊断               诊断检查
+—— 其他 ——
+/音乐 日期 2026-09-12     查询指定日期榜单（仅公告牌百首单曲榜）
+/音乐 刷新                强制刷新（绕过缓存）
+/音乐 帮助                 显示本帮助
+/音乐 诊断                 诊断检查
 
 说明：
-· 华语台湾/香港榜需安装 billboard-charts 库；内地榜走网易云音乐接口
-· Billboard 榜单每周更新（通常周二），内地榜每日更新
 · 定时推送请在管理面板配置 push_time / push_target（chart_name 可填 华语 / 内地 等）
 """.rstrip()
 
@@ -90,7 +90,7 @@ HELP_TEXT = """🎵 音乐榜单插件（astrbot_plugin_music_chart）
     "astrbot_plugin_music_chart",
     "Zxin-Pro",
     "Billboard 音乐榜单查询与每日定时推送（Hot 100 等）",
-    "1.0.6",
+    "1.0.7",
 )
 class MusicChartPlugin(Star):
     def __init__(self, context: Context, config: dict = None):
@@ -128,7 +128,7 @@ class MusicChartPlugin(Star):
 
     async def initialize(self):
         self._push_task = asyncio.create_task(self._push_loop())
-        logger.info("[music_chart] loaded v1.0.6")
+        logger.info("[music_chart] loaded v1.0.7")
 
     async def terminate(self):
         if self._push_task:
@@ -143,42 +143,36 @@ class MusicChartPlugin(Star):
 
     # ---------- 指令入口 ----------
 
-    @filter.command("music", alias={"音乐", "音乐榜"})
+    @filter.command("音乐", alias={"音乐榜"})
     async def cmd_music(self, event: AstrMessageEvent):
-        """音乐榜单查询主指令（/music /音乐 /音乐榜）"""
+        """音乐榜单查询主指令（/音乐 /音乐榜）"""
         args = (event.message_str or "").strip().split()
-        if args and args[0].lower() in ("music", "/music", "音乐", "/音乐",
-                                        "音乐榜", "/音乐榜"):
+        if args and args[0] in ("音乐", "/音乐", "音乐榜", "/音乐榜"):
             args = args[1:]
 
-        # 子命令分发（中英双语）
-        if args and args[0].lower() in ("help", "帮助"):
+        # 子命令分发
+        if args and args[0] == "帮助":
             yield event.plain_result(HELP_TEXT.format(max_items=self._max_items))
             return
-        if args and args[0].lower() in ("debug", "诊断"):
+        if args and args[0] == "诊断":
             async for r in self._debug_report():
                 yield r
             return
-        if args and args[0].lower() in ("refresh", "刷新"):
+        if args and args[0] == "刷新":
             async for r in self._query_and_reply(event, self._chart_name,
                                                  force=True):
                 yield r
             return
-        if args and args[0].lower() in ("date", "日期"):
+        if args and args[0] == "日期":
             if len(args) < 2:
-                yield event.plain_result("用法：/音乐 日期 2026-09-12（仅 hot-100 支持）")
+                yield event.plain_result("用法：/音乐 日期 2026-09-12（仅公告牌百首单曲榜支持）")
                 return
             async for r in self._query_and_reply(event, self._chart_name,
                                                  date=args[1]):
                 yield r
             return
-        if args and args[0].lower() in ("hot", "top"):
-            # 容错：/music top 20 之类
-            async for r in self._query_and_reply(event, self._chart_name):
-                yield r
-            return
         if args:
-            # 视作榜单 slug
+            # 视作榜单别名/slug
             async for r in self._query_and_reply(event, args[0].lower()):
                 yield r
             return
@@ -246,16 +240,16 @@ class MusicChartPlugin(Star):
         # 1) JSON 数据源
         try:
             data = await self.fetcher.fetch_from_json("hot-100")
-            lines.append(f"✅ JSON 数据源：连通，date={data['date']}，"
+            lines.append(f"✅ 数据源：连通，date={data['date']}，"
                          f"解析 {len(data['items'])} 条，首条={data['items'][0]['song']}")
         except ChartFetchError as e:
-            lines.append(f"❌ JSON 数据源：{e}")
+            lines.append(f"❌ 数据源：{e}")
         except Exception as e:
-            lines.append(f"❌ JSON 数据源：意外异常 {type(e).__name__}: {e}")
+            lines.append(f"❌ 数据源：意外异常 {type(e).__name__}: {e}")
         # 2) 库方案可用性
-        lines.append(("✅ billboard-charts 库：已安装"
+        lines.append(("✅ 榜单库：已安装"
                       if HAS_BILLBOARD_LIB else
-                      "⚠️ billboard-charts 库：未安装（查询非 hot-100 榜单将失败）"))
+                      "⚠️ billboard-charts 库：未安装（台湾/香港歌曲榜将无法查询）"))
         # 3) 缓存
         lines.append(f"ℹ️ {self.fetcher.cache_info()}")
         # 4) 渲染
@@ -264,7 +258,7 @@ class MusicChartPlugin(Star):
             png = await asyncio.to_thread(
                 render_chart, "渲染自检",
                 datetime.date.today().strftime("%Y-%m-%d"),
-                [{"rank": 1, "song": "测试歌曲 Test Song", "artist": "测试歌手",
+                [{"rank": 1, "song": "测试歌曲", "artist": "测试歌手",
                   "last_week": 2, "peak_position": 1, "weeks_on_chart": 3}], 1)
             lines.append(f"✅ 图片渲染：成功（{len(png)} bytes，字体 {type(f).__name__}）")
         except Exception as e:

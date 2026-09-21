@@ -1,4 +1,4 @@
-"""Pillow 渲染层：Billboard 榜单深色风格图（2x 渲染，宽 1600px）
+"""Pillow 渲染层：榜单深色风格图（2x 渲染，宽 1600px）
 
 输出 PNG bytes。渲染失败由调用方捕获后降级为文本消息。
 """
@@ -232,7 +232,7 @@ def render_chart(title: str, date, items: list, max_items: int = 10) -> bytes:
         d.rectangle([0, HEADER_H - 4, WIDTH, HEADER_H], fill=ACCENT)
         d.text((MARGIN_X, 40), "📊 " + title, font=f_title, fill=TEXT_MAIN)
         date_text = str(date) if date else "未注明周次"
-        d.text((MARGIN_X, 138), f"Week of {date_text} · Billboard Chart",
+        d.text((MARGIN_X, 138), f"Week of {date_text}",
                font=f_date, fill=TEXT_SUB)
         d.text((WIDTH - MARGIN_X, 60), "HOT", font=f_title, fill=ACCENT, anchor="ra")
 
@@ -302,15 +302,17 @@ def render_chart(title: str, date, items: list, max_items: int = 10) -> bytes:
 def chart_display_name(slug: str) -> str:
     """slug → 展示名"""
     names = {
-        "hot-100": "Billboard Hot 100",
-        "billboard-200": "Billboard 200",
-        "artist-100": "Billboard Artist 100",
+        "hot-100": "公告牌百首单曲榜",
+        "公告牌": "公告牌百首单曲榜",
+        "美国": "公告牌百首单曲榜",
+        "billboard-200": "公告牌专辑榜",
+        "artist-100": "公告牌艺人榜",
         "pop-songs": "Pop Songs",
         "radio-songs": "Radio Songs",
         "streaming-songs": "Streaming Songs",
         "digital-song-sales": "Digital Song Sales",
-        "billboard-global-200": "Billboard Global 200",
-        "billboard-global-excl-us": "Billboard Global Excl. U.S.",
+        "billboard-global-200": "公告牌全球榜",
+        "billboard-global-excl-us": "公告牌全球榜（除美）",
         "canadian-hot-100": "Canadian Hot 100",
         "uk-songs-chart": "UK Songs Chart",
         "country-songs": "Country Songs",
@@ -319,30 +321,19 @@ def chart_display_name(slug: str) -> str:
         "dance-electronic-songs": "Dance/Electronic Songs",
         "latin-songs": "Latin Songs",
         "world-digital-song-sales": "World Digital Song Sales",
-        "taiwan-songs": "Billboard 台湾歌曲榜",
-        "hong-kong-songs": "Billboard 香港歌曲榜",
-        "huayu": "Billboard 台湾歌曲榜",
-        "mandarin": "Billboard 台湾歌曲榜",
-        "guoyu": "Billboard 台湾歌曲榜",
-        "tw": "Billboard 台湾歌曲榜",
-        "cantonese": "Billboard 香港歌曲榜",
-        "yueyu": "Billboard 香港歌曲榜",
-        "hk": "Billboard 香港歌曲榜",
-        "mainland": "华语内地热歌榜",
-        "nethot": "华语内地热歌榜",
-        "netrise": "华语飙升榜",
-        "netnew": "华语新歌榜",
+        "taiwan-songs": "台湾歌曲榜",
+        "hong-kong-songs": "香港歌曲榜",
         "内地": "华语内地热歌榜",
         "热歌": "华语内地热歌榜",
         "飙升": "华语飙升榜",
         "新歌": "华语新歌榜",
-        "华语": "Billboard 台湾歌曲榜",
-        "国语": "Billboard 台湾歌曲榜",
-        "台湾": "Billboard 台湾歌曲榜",
-        "粤语": "Billboard 香港歌曲榜",
-        "香港": "Billboard 香港歌曲榜",
+        "华语": "台湾歌曲榜",
+        "国语": "台湾歌曲榜",
+        "台湾": "台湾歌曲榜",
+        "粤语": "香港歌曲榜",
+        "香港": "香港歌曲榜",
     }
-    return names.get(slug, f"Billboard {slug.replace('-', ' ').title()}")
+    return names.get(slug, slug)
 
 
 def fallback_text(title: str, date, items: list, max_items: int = 10) -> str:

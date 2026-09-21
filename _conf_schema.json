@@ -15,7 +15,7 @@
     "type": "string",
     "default": "hot-100",
     "description": "定时推送的默认榜单 slug",
-    "hint": "如 hot-100 / billboard-200 / pop-songs；注意 JSON 数据源仅支持 hot-100，其他榜单需安装 billboard-charts 库"
+    "hint": "可填 公告牌 / 华语 / 粤语 / 内地 / 飙升 / 新歌（默认公告牌百首单曲榜；台湾、香港榜需安装 billboard-charts 库）"
   },
   "max_items": {
     "type": "int",
@@ -31,7 +31,7 @@
   "use_json_source": {
     "type": "bool",
     "default": true,
-    "description": "优先使用 GitHub JSON 数据源（稳定、免解析 HTML，仅支持 hot-100）",
-    "hint": "查询其他榜单或关闭此项时自动改用 billboard-charts 库（需 pip install billboard-charts）"
+    "description": "优先使用 JSON 数据源（稳定、免解析网页，仅支持公告牌百首单曲榜）",
+    "hint": "关闭后将改用榜单库获取（需 pip install billboard-charts）；内地榜走网易云音乐接口，不受此开关影响"
   }
 }
