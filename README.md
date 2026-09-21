@@ -20,7 +20,7 @@ Billboard 音乐榜单查询与每日定时推送（Hot 100 等）。
 
 ## 出图
 
-烛之音乐榜单 t2i 模板（MiSans 深色卡片风）→ 本地 Pillow 深色榜单图 → Markdown 文本，三级降级。
+烛之音乐 t2i 模板（MiSans 深色卡片风）→ 本地 Pillow 深色榜单图 → Markdown 文本，三级降级。
 
 ## 定时推送
 

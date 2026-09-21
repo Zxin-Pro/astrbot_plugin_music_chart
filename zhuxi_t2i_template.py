@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""通用「烛之音乐榜单」播报 t2i 模板
+"""通用「烛之音乐」播报 t2i 模板
 
 钓鱼/挖矿/修仙等播报共用的 html_render 模板：
-头部品牌「烛之音乐榜单」+ 标题 + 日期；每个对象一个独立卡片段；每条动态独占一行。
+头部品牌「烛之音乐」+ 标题 + 日期；每个对象一个独立卡片段；每条动态独占一行。
 数据结构（tmpldata）：
 {
   "title": "挖矿实况",
@@ -18,7 +18,7 @@ ZHUXI_T2I_TEMPLATE = """<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>烛之音乐榜单</title>
+<title>烛之音乐</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Bold.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Medium.min.css">
@@ -72,7 +72,7 @@ ZHUXI_T2I_TEMPLATE = """<!doctype html>
 </head>
 <body>
 <header>
-  <span class="brand"><span class="dot">烛</span>之音乐榜单</span>
+  <span class="brand"><span class="dot">烛</span>之音乐</span>
   <span class="sub">{{ title }} · {{ date }}</span>
 </header>
 <main>

@@ -59,7 +59,7 @@ async def _t2i_render_direct(tmpl: str, data: dict) -> bytes:
 
 
 def _chart_cards(items: list, max_items: int = 10) -> list:
-    """榜单条目 → 烛之音乐榜单播报卡片结构"""
+    """榜单条目 → 烛之音乐播报卡片结构"""
     cards = []
     for it in items[:max_items]:
         rank, lw = it.get("rank"), it.get("last_week")
@@ -84,7 +84,7 @@ def _chart_cards(items: list, max_items: int = 10) -> list:
 
 
 async def t2i_render_chart(title: str, date, items: list, max_items: int = 10):
-    """烛之音乐榜单模板渲染榜单，失败返回 None（调用方降级本地 Pillow）。"""
+    """烛之音乐模板渲染榜单，失败返回 None（调用方降级本地 Pillow）。"""
     try:
         if not items:
             return None
